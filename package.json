@@ -1,0 +1,12 @@
+{
+  "name": "devsecops-demo",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "test": "echo \"(no tests yet)\" && exit 0",
+    "coverage": "echo \"(no coverage yet)\" && exit 0"
+  },
+  "dependencies": {
+    "lodash": "4.17.19"
+  }
+}
