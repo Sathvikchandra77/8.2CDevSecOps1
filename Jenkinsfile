@@ -58,7 +58,7 @@ Commit: ${env.GIT_COMMIT}
     }
     failure {
       emailext(
-        to: 'sathvikchandra77@gmail.com',
+        to: 'sathvikchandra77@outlook.com',
         subject: "FAILURE: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
         body: """Build Failed.
 
