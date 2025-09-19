@@ -39,53 +39,36 @@ pipeline {
     }
   }
 
-  post {
-    success {
-      emailext(
-        to: 'sathvikchandra77@outlook.com',
-        subject: "SUCCESS: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
-        body: """Build Succeeded.
+ post {
+  success {
+    emailext(
+      to: 'sathvikchandra77@outlook.com',
+      from: 'sathvikchandra77@outlook.com',
+      subject: "SUCCESS: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+      body: """Build Succeeded.
 
 Job:   ${env.JOB_NAME}
 Build: ${env.BUILD_NUMBER}
 URL:   ${env.BUILD_URL}console
-
-Agent: ${env.NODE_NAME}
-Commit: ${env.GIT_COMMIT}
-""",
-        attachLog: true
-      )
-    }
-    failure {
-      emailext(
-        to: 'sathvikchandra77@outlook.com',
-        subject: "FAILURE: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
-        body: """Build Failed.
+"""
+    )
+  }
+  failure {
+    emailext(
+      to: 'sathvikchandra77@outlook.com',
+      from: 'sathvikchandra77@outlook.com',
+      subject: "FAILURE: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+      body: """Build Failed.
 
 Job:   ${env.JOB_NAME}
 Build: ${env.BUILD_NUMBER}
 URL:   ${env.BUILD_URL}console
-
-Please check the console log for the failing stage.
-""",
-        attachLog: true
-      )
-    }
-    always {
-      // (Optional) quiet warnings about missing reports/artifacts
-      script {
-        def junitReports = findFiles(glob: '**/junit*.xml')
-        if (junitReports && junitReports.length > 0) {
-          junit testResults: '**/junit*.xml'
-        } else {
-          echo 'No JUnit XML found – skipping.'
-        }
-        if (fileExists('coverage')) {
-          archiveArtifacts artifacts: 'coverage/**/*', onlyIfSuccessful: false
-        } else {
-          echo 'No coverage/ directory – skipping.'
-        }
-      }
-    }
+"""
+    )
+  }
+  always {
+    // publish JUnit even if none found (no failure), and archive coverage if any
+    junit allowEmptyResults: true, testResults: 'reports/junit.xml'
+    archiveArtifacts artifacts: 'coverage/**/*', allowEmptyArchive: true
   }
 }
