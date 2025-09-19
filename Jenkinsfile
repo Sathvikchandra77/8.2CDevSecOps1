@@ -1,7 +1,12 @@
 pipeline {
   agent any
-  tools { nodejs 'Node18' }          // Manage Jenkins → Tools → NodeJS → name = Node18 (Install automatically ✓)
+  tools { nodejs 'Node18' }           // Manage Jenkins → Tools → NodeJS → name = Node18 (Install automatically ✓)
   options { timestamps() }
+
+  environment {
+    // Manage Jenkins → Tools → SonarQube Scanner → Add → Name: SonarScanner (Install automatically ✓)
+    SONAR_SCANNER_HOME = tool 'SonarScanner'
+  }
 
   stages {
     stage('Checkout') { steps { checkout scm } }
@@ -37,48 +42,27 @@ pipeline {
       when { expression { fileExists('package.json') } }
       steps { bat 'npm audit || exit /b 0' }
     }
+
+    stage('SonarCloud Analysis') {
+      steps {
+        // Jenkins → Credentials → Global → Add Credentials → Kind: Secret text → ID: SONAR_TOKEN
+        withCredentials([string(credentialsId: 'SONAR_TOKEN', variable: 'SONAR_TOKEN')]) {
+          bat '"%SONAR_SCANNER_HOME%\\bin\\sonar-scanner.bat" -D"sonar.login=%SONAR_TOKEN%"'
+        }
+      }
+    }
   }
 
   post {
-    success {
-      emailext(
-        to: 'sathvikchandra77@outlook.com',
-        from: 'sathvikchandra77@outlook.com',
-        subject: "SUCCESS: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
-        body: """Build Succeeded.
-
-Job:   ${env.JOB_NAME}
-Build: ${env.BUILD_NUMBER}
-URL:   ${env.BUILD_URL}console
-"""
-      )
-    }
-    failure {
-      emailext(
-        to: 'sathvikchandra77@outlook.com',
-        from: 'sathvikchandra77@outlook.com',
-        subject: "FAILURE: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
-        body: """Build Failed.
-
-Job:   ${env.JOB_NAME}
-Build: ${env.BUILD_NUMBER}
-URL:   ${env.BUILD_URL}console
-"""
-      )
-    }
     always {
       script {
         if (fileExists('reports/junit.xml')) {
           junit testResults: 'reports/junit.xml'
-        } else {
-          echo 'No JUnit XML found – skipping.'
-        }
+        } else { echo 'No JUnit XML found – skipping.' }
 
         if (fileExists('coverage')) {
           archiveArtifacts artifacts: 'coverage/**/*', onlyIfSuccessful: false
-        } else {
-          echo 'No coverage/ directory – skipping.'
-        }
+        } else { echo 'No coverage/ directory – skipping.' }
       }
     }
   }
